@@ -1,0 +1,177 @@
+import "/utility/adv_math.act";
+import "/utility/axi_stream_packet_fifo";
+
+
+
+// Defaults: 0, 1518, 1.5
+template <pint CMAC_ID; pint MAX_PKT_LEN; preal PKT_CAP>
+defproc packet_adapter_tx (
+  chan(int<512>)?      s_axis_tx_tdata_chan;
+  chan(int<64>)?       s_axis_tx_tkeep_chan;
+  chan(bool)?          s_axis_tx_tlast_chan;
+  chan(bool)?          s_axis_tx_tuser_err_chan;
+  chan(int<16>)?       s_axis_tx_tuser_size_chan;
+  chan(int<16>)?       s_axis_tx_tuser_src_chan;
+  chan(int<16>)?       s_axis_tx_tuser_dst_chan;
+
+  chan(int<512>)!      m_axis_tx_tdata_chan;
+  chan(int<64>)!      m_axis_tx_tkeep_chan;
+  chan(bool)!         m_axis_tx_tlast_chan;
+  chan(int<16>)!      m_axis_tx_tuser_err_chan;
+  
+  // Synchronized to axis_aclk (250MHz)
+  chan(bool)!         tx_pkt_sent_chan;
+  chan(bool)!         tx_pkt_drop_chan;
+  chan(int<16>)!      tx_bytes_chan
+){
+
+  // FIFO is large enough to fit in at least 1.5 largest packets
+
+  pint C_FIFO_ADDR_W = adv_math::clog2(int((MAX_PKT_LEN * 8) / 512 * PKT_CAP));
+  pint C_FIFO_DEPTH  = 1 << C_FIFO_ADDR_W;
+
+  int  <512>    axis_tx_tdata;
+  int  <64> axis_tx_tkeep;
+  bool         axis_tx_tlast;
+  int  <16> axis_tx_tuser_size;
+  int  <16> axis_tx_tuser_src;
+  int  <16> axis_tx_tuser_dst;
+  bool         axis_tx_tready;
+
+  bool         bad_dst;
+  bool         dropping;
+  bool         pkt_started;
+  bool         dropping_more;
+
+  int<512>      s_axis_tx_tdata;
+  int<64>       s_axis_tx_tkeep;
+  bool          s_axis_tx_tlast;
+  bool          s_axis_tx_tuser_err;
+
+  int<16>                 s_axis_tx_tuser_size;
+  chan(bool)              enq_chan;
+  chan(bool)              deq_chan;
+  chan(bool)              reset_chan;
+  chan(bool)              injectsbiterr_axis_chan;
+  chan(bool)              injectdbiterr_axis_chan;
+  
+  chan(int<512>)          s_axis_tdata_chan;
+  chan(int<64>)           s_axis_tkeep_chan;
+  chan(int<512/8>)        s_axis_tstrb_chan;
+  chan(bool)              s_axis_tlast_chan;
+
+  chan(bool)              sbiterr_axis_chan;
+  chan(bool)              dbiterr_axis_chan;
+  chan(bool)              almost_full_chan;
+
+  chan(int<512>)          m_axis_tdata_chan;
+  chan(int<64>)           m_axis_tkeep_chan;
+  chan(int<512/8>)        m_axis_tstrb_chan;
+  chan(bool)              m_axis_tlast_chan;
+
+
+  int<512>      m_axis_tdata;
+  int<64>       m_axis_tstrb;
+  int<64>       m_axis_tkeep;
+  bool          m_axis_tlast;
+
+  int byte_idx;
+  
+  bool     deq_val;
+
+  // Drop if the destination of an incoming packet is not this CMAC port
+  axi_stream_packet_fifo<C_FIFO_DEPTH, 512> tx_cdc_fifo_inst (
+            enq_chan,
+            deq_chan,
+            reset_chan,
+            injectdbiterr_axis_chan,
+            injectdbiterr_axis_chan,
+            s_axis_tdata_chan,
+            s_axis_tkeep_chan,
+            s_axis_tstrb_chan,
+            s_axis_tlast_chan,
+            sbiterr_axis_chan,
+            dbiterr_axis_chan,
+            almost_full_chan,
+            m_axis_tdata_chan,
+            m_axis_tkeep_chan,
+            m_axis_tstrb_chan,
+            m_axis_tlast_chan
+        );
+
+  chp-txt{ 
+    // Do this on reset as well.
+    pkt_started   := false;
+    dropping_more := false;
+    forever{
+      recv(s_axis_tx_tdata_chan, s_axis_tx_tdata),
+      recv(s_axis_tx_tkeep_chan, s_axis_tx_tkeep),
+      recv(s_axis_tx_tlast_chan, s_axis_tx_tlast),
+      recv(s_axis_tx_tuser_err_chan, s_axis_tx_tuser_err),
+      recv(s_axis_tx_tuser_size_chan, s_axis_tx_tuser_size),
+      // The following values are not used (I think)
+      // recv(s_axis_tx_tuser_src_chan, s_axis_tx_tuser_src_src),
+      // recv(s_axis_tx_tuser_dst_chan, s_axis_tx_tuser_dst_src);
+
+      byte_idx := 0;
+      axis_tx_tkeep := 0;
+      while( byte_idx < 64 ){
+          select{ 
+            case s_axis_tx_tlast & (int(s_axis_tx_tuser_size, 6) != 0):
+              axis_tx_tkeep := axis_tx_tkeep | int((int(s_axis_tx_tuser_size, 6) > byte_idx)) << byte_idx;
+            else: 
+              axis_tx_tkeep := axis_tx_tkeep | s_axis_tx_tkeep{byte_idx}
+          };
+          byte_idx := byte_idx + 1
+      };
+      bad_dst  := ((axis_tx_tuser_dst & (0x1 << (CMAC_ID + 6))) = 0);
+      dropping := (~pkt_started & bad_dst) | dropping_more;
+      send(tx_pkt_sent_chan, axis_tx_tlast & axis_tx_tready & ~dropping);
+      send(tx_pkt_drop_chan, axis_tx_tlast & axis_tx_tready & dropping);
+      send(tx_bytes_chan, axis_tx_tuser_size);
+
+      select{
+        case ~pkt_started & axis_tx_tready: 
+          (
+          select {
+            case axis_tx_tlast:
+              (pkt_started   := false;
+              dropping_more := false);
+            else: 
+              (pkt_started   := true;
+              dropping_more := bad_dst)
+          });
+        case axis_tx_tlast & axis_tx_tready: 
+          (pkt_started   := false;
+          dropping_more  := false);
+        else: skip
+      };
+      select{
+        case ~dropping:
+          (send(enq_chan, ~dropping),
+          send(s_axis_tdata_chan, s_axis_tx_tdata),
+          send(s_axis_tkeep_chan, axis_tx_tkeep),
+          send(s_axis_tstrb_chan, int(1, 64)),
+          send(s_axis_tlast_chan, axis_tx_tlast));
+        else: skip
+      };
+      // Should be send every time.
+      recv(deq_chan, deq_val);
+      select{
+        case deq_val:
+        // Recieve from the queue
+        (recv(m_axis_tdata_chan, m_axis_tdata),
+        recv(m_axis_tkeep_chan, m_axis_tkeep),
+        // tstrb may need to be handled in the queue
+        recv(m_axis_tstrb_chan, m_axis_tstrb),
+        recv(m_axis_tlast_chan, m_axis_tlast);
+        // Send to the next component
+        send(m_axis_tx_tdata_chan, m_axis_tdata),
+        send(m_axis_tx_tkeep_chan, m_axis_tkeep),
+        send(m_axis_tx_tlast_chan, m_axis_tlast));
+        else:
+          skip
+      }
+    }
+  }
+}

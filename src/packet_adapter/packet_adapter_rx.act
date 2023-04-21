@@ -1,0 +1,140 @@
+import "./utility/adv_math.act";
+import "./utility/axi_stream_packet_buffer.act";
+
+// Defaults: 0, 64, 1518, 1.5
+template<pint CMAC_ID; pint MIN_PKT_LEN; pint MAX_PKT_LEN; preal PKT_CAP>
+defproc packet_adapter_rx
+(
+  chan(int<512>)?      s_axis_rx_tdata_chan;
+  chan(int<64>)?       s_axis_rx_tkeep_chan;
+  chan(bool)?          s_axis_rx_tlast_chan;
+  chan(bool)?          s_axis_rx_tuser_err_chan;
+
+  chan(int<512>)! m_axis_rx_tdata_chan;
+  chan(int<64>)!  m_axis_rx_tkeep_chan;
+  chan(bool)!     m_axis_rx_tlast_chan;
+  chan(int<16>)!  m_axis_rx_tuser_size_chan;
+  chan(int<16>)!  m_axis_rx_tuser_src_chan;
+  chan(int<16>)!  m_axis_rx_tuser_dst_chan;
+
+  // Synchronized to axis_aclk (250MHz)
+  chan(bool)!         rx_pkt_recv_chan;
+  chan(bool)!         rx_pkt_drop_chan;
+  chan(bool)!         rx_pkt_err_chan;
+  chan(int<16>)!      rx_bytes_chan
+) {
+
+  // FIFO is large enough to fit in at least 1.5 largest packets
+  pint C_FIFO_ADDR_W = adv_math::clog2((int((MAX_PKT_LEN * 8) / 512 * PKT_CAP)));
+  pint C_FIFO_DEPTH  = 1 << C_FIFO_ADDR_W;
+
+  int<16>      pkt_size;
+  bool         pkt_recv;
+  bool         pkt_drop;
+  bool         pkt_err;
+
+  bool         drop;
+  bool         drop_busy;
+
+  int<512>     s_axis_rx_tdata;
+  int<512/8>   s_axis_rx_tkeep;
+  bool         s_axis_rx_tlast;
+  bool         s_axis_rx_tuser_err; 
+  int<512>     m_axis_rx_tdata;
+  int<512/8>   m_axis_rx_tkeep;
+  bool         m_axis_rx_tlast;
+  int<512>     axis_buf_tdata;
+  int<64>      axis_buf_tkeep;
+  bool         axis_buf_tlast;
+  bool         axis_buf_tuser_err;
+  bool         axis_buf_tready;
+  bool         buf_is_full;
+  chan(bool)              enq_chan;
+  chan(bool)              deq_chan;
+  chan(int<512>)     axis_buf_tdata_chan;
+  chan(int<64>)      axis_buf_tkeep_chan;
+  chan(bool)         axis_buf_tlast_chan;
+  chan(bool)         axis_buf_tuser_err_chan;
+  chan(bool)         axis_buf_tready_chan;
+  chan(bool)         axis_buf_drop_chan;
+  chan(bool)         drop_chan;
+  chan(int<512>)     m_axis_buf_tdata_chan;
+  chan(int<64>)      m_axis_buf_tkeep_chan;
+  chan(bool)         m_axis_buf_tlast_chan;
+  chan(bool)         buf_is_full_chan;
+  // re-add bookkeeping later 
+  // axi_stream_size_counter<512> size_cnt_inst (
+  //   (axis_buf_tvalid),
+  //   (axis_buf_tkeep),
+  //   (axis_buf_tlast),
+  //   (0),
+  //   (1),
+  // 
+  //   (),
+  //   (pkt_size),
+  // 
+  //   (cmac_clk),
+  //   (cmac_rstn)
+  // );
+
+  // Total number of packets from CMAC =
+  //   number of received packets (i.e., pkt_recv) +
+  //   number of dropped packets (i.e., pkt_drop)
+
+  axi_stream_packet_buffer <512, MIN_PKT_LEN, MAX_PKT_LEN, C_FIFO_DEPTH> pkt_buf_inst (
+    enq_chan,
+    deq_chan,
+    (axis_buf_tdata_chan),
+    (axis_buf_tkeep_chan),
+    (axis_buf_tlast_chan),
+    (axis_buf_tuser_err_chan),
+    (drop_chan),
+
+    (m_axis_buf_tdata_chan),
+    (m_axis_buf_tkeep_chan),
+    (m_axis_buf_tlast_chan),
+    (buf_is_full_chan)
+  );
+  
+  chp-txt {
+    forever {
+      select {
+        case #s_axis_rx_tkeep_chan:(
+          recv(s_axis_rx_tdata_chan, s_axis_rx_tdata),
+          recv(s_axis_rx_tkeep_chan, s_axis_rx_tkeep),
+          recv(s_axis_rx_tlast_chan, s_axis_rx_tlast),
+          recv(s_axis_rx_tuser_err_chan, s_axis_rx_tuser_err);
+
+          recv(buf_is_full_chan, buf_is_full);
+          
+          send(axis_buf_tdata_chan, s_axis_rx_tdata),
+          send(axis_buf_tkeep_chan, s_axis_rx_tkeep),
+          send(axis_buf_tlast_chan, s_axis_rx_tlast),
+          send(axis_buf_tuser_err_chan, s_axis_rx_tuser_err),
+          send(axis_buf_drop_chan, buf_is_full)
+        );
+        else: skip
+      };
+
+      
+      // Packets should be dropped when
+      // - error bit is asserted (i.e., tuser_err = 1 at the last beat), or
+      // - packet buffer does not have space
+      select {
+        case #m_axis_buf_tdata_chan: (
+          recv(m_axis_rx_tdata_chan, m_axis_rx_tdata),
+          recv(m_axis_rx_tkeep_chan, m_axis_rx_tkeep),
+          recv(m_axis_rx_tlast_chan, m_axis_rx_tlast);
+
+          send(m_axis_rx_tdata_chan, m_axis_rx_tdata),
+          send(m_axis_rx_tkeep_chan, m_axis_rx_tkeep),
+          send(m_axis_rx_tlast_chan, m_axis_rx_tlast),
+          send(rx_pkt_recv_chan, axis_buf_tlast  & drop),
+          send(rx_pkt_drop_chan, axis_buf_tlast & drop),
+          send(rx_pkt_err_chan,  axis_buf_tlast & axis_buf_tuser_err);
+          send(rx_bytes_chan, 512)
+        )
+      }
+    }
+  }
+}

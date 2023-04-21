@@ -1,0 +1,137 @@
+import "./packet_adapter/packet_adapter_rx.act";
+import "./packet_adapter/packet_adapter_tx.act";
+template<pint CMAC_ID; pint MIN_PKT_LEN; pint MAX_PKT_LEN>
+defproc packet_adapter (
+
+  chan(int<512>)      s_axis_tx_tdata_chan;
+  chan(int<64>)       s_axis_tx_tkeep_chan;
+  chan(bool)          s_axis_tx_tlast_chan;
+  chan(bool)          s_axis_tx_tuser_err_chan;
+  chan(int<16>)       s_axis_tx_tuser_size_chan;
+  chan(int<16>)       s_axis_tx_tuser_src_chan;
+  chan(int<16>)       s_axis_tx_tuser_dst_chan;
+
+  chan(int<512>)      m_axis_tx_tdata_chan;
+  chan(int<64>)       m_axis_tx_tkeep_chan;
+  chan(bool)          m_axis_tx_tlast_chan;
+  chan(int<16>)       m_axis_tx_tuser_err_chan;
+  
+  chan(bool)          tx_pkt_sent_chan;
+  chan(bool)          tx_pkt_drop_chan;
+  chan(int<16>)       tx_bytes_chan;
+
+
+  chan(int<512>)?     s_axis_rx_tdata_chan;
+  chan(int<64>)?      s_axis_rx_tkeep_chan;
+  chan(bool)?         s_axis_rx_tlast_chan;
+  chan(bool)?         s_axis_rx_tuser_err_chan;
+
+  chan(int<512>)!     m_axis_rx_tdata_chan;
+  chan(int<64>)!      m_axis_rx_tkeep_chan;
+  chan(bool)!         m_axis_rx_tlast_chan;
+  chan(int<16>)!      m_axis_rx_tuser_size_chan;
+  chan(int<16>)!      m_axis_rx_tuser_src_chan;
+  chan(int<16>)!      m_axis_rx_tuser_dst_chan;
+
+  // Synchronized to axis_aclk (250MHz)
+  chan(bool)!         rx_pkt_recv_chan;
+  chan(bool)!         rx_pkt_drop_chan;
+  chan(bool)!         rx_pkt_err_chan;
+  chan(int<16>)!      rx_bytes_chan
+
+) {
+
+  bool        axil_aresetn;
+
+  bool        tx_pkt_sent;
+  bool        tx_pkt_drop;
+  int<16>     tx_bytes;
+
+  bool        rx_pkt_recv;
+  bool        rx_pkt_drop;
+  bool        rx_pkt_err;
+  int<16>     rx_bytes;
+
+  // Getting rid of this
+  // Reset is clocked by the 125MHz AXI-Lite clock
+  // generic_reset<2, 100> reset_inst (
+  //  mod_rstn,
+  //  mod_rst_done,
+  //  {cmac_clk, axil_aclk},
+  //  {cmac_rstn, axil_aresetn}
+  //);
+
+// bookkeeping, adding later
+//  packet_adapter_register reg_inst (
+//    s_axil_awvalid,
+//    s_axil_awaddr,
+//    s_axil_awready,
+//    s_axil_wvalid,
+//    s_axil_wdata,
+//    s_axil_wready,
+//    s_axil_bvalid,
+//    s_axil_bresp,
+//    s_axil_bready,
+//    s_axil_arvalid,
+//    s_axil_araddr,
+//    s_axil_arready,
+//    s_axil_rvalid,
+//    s_axil_rdata,
+//    s_axil_rresp,
+//    s_axil_rready,
+//
+//    tx_pkt_sent,
+//    tx_pkt_drop,
+//    tx_bytes,
+//
+//    rx_pkt_recv,
+//    rx_pkt_drop,
+//    rx_pkt_err,
+//    rx_bytes,
+//
+//    axil_aclk,
+//    axis_aclk,
+//   axil_aresetn
+//  );
+
+
+  packet_adapter_tx<CMAC_ID, MAX_PKT_LEN, 1.5>  tx_inst (
+    s_axis_tx_tdata_chan,
+    s_axis_tx_tkeep_chan,
+    s_axis_tx_tlast_chan,
+    s_axis_tx_tuser_err_chan,
+    s_axis_tx_tuser_size_chan,
+    s_axis_tx_tuser_src_chan,
+    s_axis_tx_tuser_dst_chan,
+
+    m_axis_tx_tdata_chan,
+    m_axis_tx_tkeep_chan,
+    m_axis_tx_tlast_chan,
+    m_axis_tx_tuser_err_chan,
+
+    tx_pkt_sent_chan,
+    tx_pkt_drop_chan,
+    tx_bytes_chan
+  );
+
+  
+
+  packet_adapter_rx<CMAC_ID, MAX_PKT_LEN, 1.5> rx_inst (
+    s_axis_rx_tdata_chan,
+    s_axis_rx_tkeep_chan,
+    s_axis_rx_tlast_chan,
+    s_axis_rx_tuser_err_chan,
+
+    m_axis_rx_tdata_chan,
+    m_axis_rx_tkeep_chan,
+    m_axis_rx_tlast_chan,
+    m_axis_rx_tuser_size_chan,
+    m_axis_rx_tuser_src_chan,
+    m_axis_rx_tuser_dst_chan,
+
+    rx_pkt_recv_chan,
+    rx_pkt_drop_chan,
+    rx_pkt_err_chan,
+    rx_bytes_chan
+  );
+}
