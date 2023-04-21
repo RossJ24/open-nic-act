@@ -1,0 +1,291 @@
+
+
+function get_hash_window(
+    bool valid;
+    int<320> key;
+    int<8> offset
+    ): int<32> {
+        chp-txt {
+            self := (valid) ? key{offset+32 .. offset} : 0
+        }
+    }
+
+defproc qdma_subsystem_hash(
+    chan(int<512>)? p_axis_tdata_chan;
+    chan(bool)?     p_axis_tlast_chan;
+    chan(int<320>)? hash_key_chan;
+    
+    chan(int<32>)!  hash_result_chan
+) {
+
+    int<512> p_axis_tdata;
+    bool p_axis_tlast;
+    int<320>  hash_key;
+
+    pint S_S1_IDLE        = 2;
+    pint S_S1_MORE        = 2;
+    pint S_S1_PASS        = 2;
+
+    pint C_MIN_ETH_HDR_LEN        = 14;
+    pint C_MAX_ETH_HDR_LEN        = 18;
+    pint C_MIN_IP4_HDR_LEN        = 20;
+    pint C_MAX_IP4_HDR_LEN        = 60;
+    pint C_TCPUDP_HDR_PART_LEN    = 4;
+
+    pint C_MAX_ETH_PAYLOAD_LEN    = C_MAX_IP4_HDR_LEN + C_TCPUDP_HDR_PART_LEN;
+    pint C_MAX_IP4_PAYLOAD_LEN    = C_TCPUDP_HDR_PART_LEN;
+
+    pint C_ETH_TYPE_8021Q         = 0x0081;
+    pint C_ETH_TYPE_IP4           = 0x0008;
+
+    pint C_ETH_TYPE_OFFSET        = 12;
+    pint C_ETH_TYPE_LEN           = 2;
+    pint C_ETH_8021Q_TCI_OFFSET   = 14;
+    pint C_ETH_8021Q_TCI_LEN      = 2;
+    pint C_ETH_8021Q_TYPE_OFFSET  = 16;
+    pint C_ETH_8021Q_TYPE_LEN     = 2;
+    pint C_ETH_8021Q_VID_MASK     = 0x0FFF;
+
+    pint C_IP4_PROTO_TCP          = 0x06;
+    pint C_IP4_PROTO_UDP          = 0x11;
+
+    pint C_IP4_IHL_OFFSET         = 0;
+    pint C_IP4_IHL_LEN            = 1;
+    pint C_IP4_IHL_MASK           = 0x0F;
+    pint C_IP4_PROTO_OFFSET       = 9;
+    pint C_IP4_PROTO_LEN          = 1;
+    pint C_IP4_SRC_ADDR_OFFSET    = 12;
+    pint C_IP4_SRC_ADDR_LEN       = 4;
+    pint C_IP4_DST_ADDR_OFFSET    = 16;
+    pint C_IP4_DST_ADDR_LEN       = 4;
+
+    pint C_TCPUDP_SRC_PORT_OFFSET = 0;
+    pint C_TCPUDP_SRC_PORT_LEN    = 2;
+    pint C_TCPUDP_DST_PORT_OFFSET = 2;
+    pint C_TCPUDP_DST_PORT_LEN    = 2;
+
+    int<2> s1_state;
+    int<2> next_s1_state;
+    int<12> vid_shift_reg[2];
+
+    bool   eth_is_8021q;
+    bool   eth_type_is_ip4;
+    
+    int<12> next_vid_shift_reg[2];
+    int<C_MAX_ETH_PAYLOAD_LEN*8> next_eth_payload;
+    bool next_eth_is_8021q;
+    bool next_eth_type_is_ip4;
+
+    int<16> eth_type;
+    int<16> eth_8021q_type;
+    int<12> eth_8021q_vid;
+    int<C_MAX_ETH_PAYLOAD_LEN*8> eth_payload;
+
+    bool    ip4_payload_valid;
+    int<C_MAX_IP4_PAYLOAD_LEN*8>    ip4_payload;
+    int<8>  ip4_proto;
+    int<32> ip4_src_addr;
+    int<32> ip4_dst_addr;
+    int<4>  ip4_ihl;
+    int<72> ip4_tuple;
+    int<32> vid_hash;
+    int<32> ip4_hash[4];
+    int<32>  port_hash[2];
+    int i;
+    
+    int<32> hash_res
+
+    chp-txt {
+        next_vid_shift_reg[0]   := 0;
+        next_vid_shift_reg[1]   := 0;
+        next_eth_payload     := eth_payload;
+        next_eth_payload     := 0;
+        next_eth_type_is_ip4 := eth_type_is_ip4;
+        next_eth_is_8021q    := eth_is_8021q;
+        next_s1_state        := s1_state;
+        forever {
+            i := 0;
+            recv(p_axis_tdata_chan, p_axis_tdata),
+            recv(p_axis_tlast_chan, p_axis_tlast),
+            recv(hash_key_chan, hash_key);
+
+            select{
+                case s1_state = S_S1_IDLE:(
+                    select {
+                        case eth_type = C_ETH_TYPE_IP4:
+                            (
+                                next_vid_shift_reg[0] := 0;
+                                next_eth_payload := 0;
+                                i := 0;
+                                while(i < 8*50){
+                                    next_eth_payload := next_eth_payload | p_axis_tdata{14*8 + i} << i
+                                };
+                                next_eth_type_is_ip4 := true;
+                                next_eth_is_8021q := false
+                            );
+                        case eth_type = C_ETH_TYPE_8021Q:
+                            (
+                                next_vid_shift_reg[0] := eth_8021q_vid;
+                                next_eth_payload := 0;
+                                i := 0;
+                                while(i < 8*46){
+                                    next_eth_payload := next_eth_payload | p_axis_tdata{18*8 + i} << i
+                                };
+                                next_eth_type_is_ip4 := (eth_8021q_type = C_ETH_TYPE_IP4);
+                                next_eth_is_8021q    := true
+                            );
+                        else: (
+                            next_vid_shift_reg[0] := 0;
+                            next_eth_payload      := 0;
+                            next_eth_type_is_ip4  := true;
+                            next_eth_is_8021q     := false
+                        )
+                    };
+
+                    select{
+                        case p_axis_tlast: (
+                            next_vid_shift_reg[1]  := vid_shift_reg[0];
+                            next_s1_state          := S_S1_IDLE
+                        );
+                        else: (
+                            next_vid_shift_reg[1] := vid_shift_reg[1];
+                            next_s1_state         := S_S1_MORE  
+                        )
+                    }
+                );
+                case s1_state = S_S1_MORE: (
+                    select {
+                        case ~eth_is_8021q: (
+                            i := 0;
+                            while(i < 8*14) {
+                                next_eth_payload := next_eth_payload | p_axis_tdata{i} << ((50 *8) + i)
+                            }
+                        );
+                        else:(
+                            next_eth_payload := next_eth_payload | (p_axis_tdata{144..0} << (46*8))
+                        )
+                    };
+                    next_vid_shift_reg[1] := vid_shift_reg[0];
+                    next_s1_state := (p_axis_tlast) ?  S_S1_IDLE : S_S1_PASS
+                );
+
+                case s1_state = S_S1_PASS: (
+                    select {
+                        case p_axis_tlast: (
+                            next_s1_state := S_S1_IDLE
+                        );
+                        else: skip
+                    }
+                );
+                else: skip
+            };
+
+            ip4_payload_valid := true;
+            select {
+                case true:(
+                    select {
+                        case eth_type_is_ip4: (
+                            ip4_proto := eth_payload{((C_IP4_PROTO_LEN * 8) + (C_IP4_PROTO_OFFSET*8)) .. (C_IP4_PROTO_OFFSET*8)},
+                            ip4_src_addr := eth_payload{((C_IP4_SRC_ADDR_OFFSET * 8) + (C_IP4_SRC_ADDR_LEN*8)) .. (C_IP4_SRC_ADDR_OFFSET*8)},
+                            ip4_dst_addr := eth_payload{((C_IP4_SRC_ADDR_OFFSET * 8) + (C_IP4_SRC_ADDR_LEN*8)) .. (C_IP4_SRC_ADDR_OFFSET*8)};
+                            ip4_tuple := {ip4_dst_addr, ip4_src_addr, ip4_proto}
+                        );
+                        else: (
+                            ip4_proto := 0;
+                            ip4_src_addr := 0;
+                            ip4_dst_addr := 0
+                        )
+                    };
+
+                    select {
+                        case ip4_ihl = 5: (
+                            ip4_payload := eth_payload{(C_MAX_IP4_PAYLOAD_LEN*8 + (5*32)).. (5*32)}
+                        );
+                        case ip4_ihl = 6: (
+                            ip4_payload := eth_payload{(C_MAX_IP4_PAYLOAD_LEN*8 + (6*32)).. (6*32)}
+                        );
+                        case ip4_ihl = 7: (
+                            ip4_payload := eth_payload{(C_MAX_IP4_PAYLOAD_LEN*8 + (7*32)).. (7*32)}
+                        );
+                        case ip4_ihl = 8: (
+                            ip4_payload := eth_payload{(C_MAX_IP4_PAYLOAD_LEN*8 + (8*32)).. (8*32)}
+                        );
+                        case ip4_ihl = 9: (
+                            ip4_payload := eth_payload{(C_MAX_IP4_PAYLOAD_LEN*8 + (9*32)).. (9*32)}
+                        );
+                        case ip4_ihl = 10: (
+                            ip4_payload := eth_payload{(C_MAX_IP4_PAYLOAD_LEN*8 + (10*32)).. (10*32)}
+                        );
+                        case ip4_ihl = 11: (
+                            ip4_payload := eth_payload{(C_MAX_IP4_PAYLOAD_LEN*8 + (11*32)).. (11*32)}
+                        );
+                        case ip4_ihl = 12: (
+                            ip4_payload := eth_payload{(C_MAX_IP4_PAYLOAD_LEN*8 + (12*32)).. (12*32)}
+                        );
+                        case ip4_ihl = 13: (
+                            ip4_payload := eth_payload{(C_MAX_IP4_PAYLOAD_LEN*8 + (13*32)).. (13*32)}
+                        );
+                        case ip4_ihl = 14: (
+                            ip4_payload := eth_payload{(C_MAX_IP4_PAYLOAD_LEN*8 + (14*32)).. (14*32)}
+                        );
+                        case ip4_ihl = 15: (
+                            ip4_payload := eth_payload{(C_MAX_IP4_PAYLOAD_LEN*8 + (15*32)).. (15*32)}
+                        );
+                        else: ip4_payload := 0
+                    }
+                );
+                else: ip4_payload_valid := false
+            };
+            select {
+                case ip4_payload_valid: (
+                    ip4_hash[0] := 0,
+                    i := 0;
+                    while(i < 18) {
+                        ip4_hash[0] := ip4_hash[0] ^ get_hash_window(bool(ip4_tuple{i + 0*18}), hash_key, 4 + i + 0*18);
+                        i := i + 1
+                    };
+                    
+                    ip4_hash[1] := 0,
+                    i := 0;
+                    while(i < 18) {
+                        ip4_hash[1] := ip4_hash[1] ^ get_hash_window(bool(ip4_tuple{i + 1*18}), hash_key, 4 + i + 1*18);
+                        i := i + 1
+                    };
+                    
+                    ip4_hash[2] := 0,
+                    i := 0;
+                    while(i < 18) {
+                        ip4_hash[2] := ip4_hash[2] ^ get_hash_window(bool(ip4_tuple{i + 2*18}), hash_key, 4 + i + 2*18);
+                        i := i + 1
+                    };
+
+                    ip4_hash[3] := 0,
+                    i := 0;
+                    while(i < 18) {
+                        ip4_hash[3] := ip4_hash[3] ^ get_hash_window(bool(ip4_tuple{i + 3*18}), hash_key, 4 + i + 3*18);
+                        i := i + 1
+                    };
+                    
+
+                    port_hash[0] := 0,
+                    i := 0;
+                    while(i < 16){
+                        port_hash[0] := port_hash[0] ^ get_hash_window(bool(ip4_payload{i + 0*16}), hash_key, 76 + i + 0*16);
+                        i := i + 1
+                    };
+                    
+                    port_hash[1] := 0,
+                    i := 0;
+                    while(i < 16){
+                        port_hash[1] := port_hash[1] ^ get_hash_window(bool(ip4_payload{i + 1*16}), hash_key, 76 + i + 1*16);
+                        i := i + 1
+                    }
+                );
+                else: skip
+            };
+             
+            hash_result := vid_hash ^ ip4_hash[0] ^ ip4_hash[1] ^ ip4_hash[2] ^ ip4_hash[3] ^ port_hash[0] ^ port_hash[1];
+            send(hash_result_chan, hash_result)
+        }
+    }
+}
