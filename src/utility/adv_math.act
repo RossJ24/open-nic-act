@@ -1,0 +1,12 @@
+
+namespace adv_math{
+    // Ceiling log base 2
+    export function clog2(pint x): pint {
+        chp-txt {
+            self := 0;
+            while( (1 << self) < x){
+                self := self + 1
+            }
+        }
+    }
+}
