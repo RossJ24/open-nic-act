@@ -1,0 +1,67 @@
+template<pint FIFO_DEPTH; pint DATA_WIDTH>
+defproc xpm_fifo(
+    chan(bool)?              enq_chan;
+    chan(bool)!              deq_chan;
+    chan(bool)?              reset_chan;
+    chan(bool)?              injectsbiterr_axis_chan;
+    chan(bool)?              injectdbiterr_axis_chan;
+    chan(int<DATA_WIDTH>)?   s_axis_tdata_chan;
+    chan(int<DATA_WIDTH/8>)? s_axis_tkeep_chan;
+    chan(int<DATA_WIDTH/8>)? s_axis_tstrb_chan;
+    chan(bool)?              s_axis_tlast_chan;
+    chan(bool)!              sbiterr_axis_chan;
+    chan(bool)!              dbiterr_axis_chan;
+    chan(bool)!              almost_full_chan;
+    chan(int<DATA_WIDTH>)!   m_axis_tdata_chan;
+    chan(int<DATA_WIDTH/8>)! m_axis_tkeep_chan;
+    chan(int<DATA_WIDTH/8>)! m_axis_tstrb_chan;
+    chan(bool)!              m_axis_tlast_chan
+) {
+    int<DATA_WIDTH>   s_axis_tdata;
+    int<DATA_WIDTH/8> s_axis_tstrb;
+    int<DATA_WIDTH/8> s_axis_tkeep;
+    bool              reset;
+    bool              injectsbiterr_axis;
+    bool              injectdbiterr_axis;
+    bool              enq;
+    bool              deq;
+    bool              s_axis_tlast;
+    int head;
+    int tail;
+    int<DATA_WIDTH>   data_queue[FIFO_DEPTH];
+    int<DATA_WIDTH/8> keep_queue[FIFO_DEPTH];
+    int<DATA_WIDTH/8> tstrb_queue[FIFO_DEPTH];
+    bool              last_queue[FIFO_DEPTH];
+
+    
+    chp-txt {
+        head := 0;
+        tail := 0;
+        forever {
+            select { 
+                case #enq_chan & ~(tail = ((head-1) % FIFO_DEPTH)):
+                    (recv(enq_chan, enq),
+                    recv(s_axis_tdata_chan, s_axis_tdata),
+                    recv(s_axis_tkeep_chan, s_axis_tkeep),
+                    recv(s_axis_tstrb_chan, s_axis_tstrb),
+                    recv(s_axis_tlast_chan, s_axis_tlast);
+                    data_queue[tail]      := s_axis_tdata,
+                    keep_queue[tail]      := s_axis_tkeep,
+                    tstrb_queue[tail]     := s_axis_tstrb,
+                    last_queue[tail]      := s_axis_tlast;
+                    tail := tail + 1);
+                else: skip
+            };
+            // If it is not empty, then we can dequeue
+            send(deq_chan, ~(head = tail));
+            select {
+                case ~(head = tail):
+                    (send(m_axis_tdata_chan, data_queue[head]),
+                    send(m_axis_tkeep_chan,  keep_queue[head]),
+                    send(m_axis_tstrb_chan,  tstrb_queue[head]),
+                    send(m_axis_tlast_chan,  last_queue[head]);
+                    head := head + 1)
+            }
+        }
+    }
+}
