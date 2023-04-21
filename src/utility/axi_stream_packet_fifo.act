@@ -1,0 +1,43 @@
+import "xpm_utility/xpm_fifo.act";
+
+template<pint FIFO_DEPTH; pint TDATA_WIDTH>
+defproc axi_stream_packet_fifo(
+    chan(bool)?              enq_chan;
+    chan(bool)!              deq_chan;
+    chan(bool)?              reset_chan;
+    chan(bool)?              injectsbiterr_axis_chan;
+    chan(bool)?              injectdbiterr_axis_chan;
+    chan(int<TDATA_WIDTH>)?   s_axis_tdata_chan;
+    chan(int<TDATA_WIDTH/8>)? s_axis_tkeep_chan;
+    chan(int<TDATA_WIDTH/8>)? s_axis_tstrb_chan;
+    chan(bool)?              s_axis_tlast_chan;
+    chan(bool)!              sbiterr_axis_chan;
+    chan(bool)!              dbiterr_axis_chan;
+    chan(bool)!              almost_full_chan;
+    chan(int<TDATA_WIDTH>)!   m_axis_tdata_chan;
+    chan(int<TDATA_WIDTH/8>)! m_axis_tkeep_chan;
+    chan(int<TDATA_WIDTH/8>)! m_axis_tstrb_chan;
+    chan(bool)!              m_axis_tlast_chan
+) {
+    xpm_fifo<FIFO_DEPTH, TDATA_WIDTH> fifo_q(
+            enq_chan,
+            deq_chan,
+            reset_chan,
+            injectdbiterr_axis_chan,
+            injectdbiterr_axis_chan,
+            s_axis_tdata_chan,
+            s_axis_tkeep_chan,
+            s_axis_tstrb_chan,
+            s_axis_tlast_chan,
+            sbiterr_axis_chan,
+            dbiterr_axis_chan,
+            almost_full_chan,
+            m_axis_tdata_chan,
+            m_axis_tkeep_chan,
+            m_axis_tstrb_chan,
+            m_axis_tlast_chan
+        );
+    chp-txt{
+        skip
+    }
+}

@@ -1,0 +1,83 @@
+
+template<pint TDATA_W; pint MIN_PKT_LEN; pint MAX_PKT_LEN; pint FIFO_DEPTH>
+defproc axi_stream_packet_buffer(
+    chan(bool)?              enq_chan;
+    chan(bool)!              deq_chan;
+    chan(int<TDATA_W>)?    s_axis_tdata_chan;
+    chan(int<TDATA_W/8>)?  s_axis_tkeep_chan;
+    chan(bool)?            s_axis_tlast_chan;
+    chan(bool)?            s_axis_err_chan;
+    chan(bool)?            drop_chan;
+    
+    chan(int<TDATA_W>)!    m_axis_tdata_chan;
+    chan(int<TDATA_W/8>)!  m_axis_tkeep_chan;
+    chan(bool)!            m_axis_tlast_chan;
+    chan(bool)!            m_axis_err_chan;
+    chan(bool)!            buf_is_full_chan
+) {
+    int<TDATA_W>   s_axis_tdata;
+    int<TDATA_W/8> s_axis_tkeep;
+    bool              reset;
+    bool              injectsbiterr_axis;
+    bool              injectdbiterr_axis;
+    bool              enq;
+    bool              deq;
+    bool              drop;
+    bool              s_axis_tlast;
+    bool              s_axis_err;
+    int head;
+    int tail;
+    int<TDATA_W>   data_queue[FIFO_DEPTH];
+    int<TDATA_W/8> keep_queue[FIFO_DEPTH];
+    bool              last_queue[FIFO_DEPTH];
+    bool              err_queue[FIFO_DEPTH];
+    int start_of_curr_pkt;
+    chp-txt {
+        head := 0;
+        tail := 0;
+        start_of_curr_pkt := 0;
+        forever {
+            send(buf_is_full_chan, (tail = ((head-1) % FIFO_DEPTH)));
+            select { 
+                case #enq_chan & ~(tail = ((head-1) % FIFO_DEPTH)): (
+                    recv(enq_chan, enq),
+                    recv(s_axis_tdata_chan, s_axis_tdata),
+                    recv(s_axis_tkeep_chan, s_axis_tkeep),
+                    recv(s_axis_tlast_chan, s_axis_tlast),
+                    recv(s_axis_err_chan,  s_axis_err),
+                    recv(drop_chan, drop);
+                    select{
+                        case drop:(
+                            tail := start_of_curr_pkt
+                        );
+                        else: (
+                            select{
+                                case s_axis_tlast:(
+                                    start_of_curr_pkt := tail + 1
+                                );
+                                else: skip
+                            };
+                            data_queue[tail]      := s_axis_tdata,
+                            keep_queue[tail]      := s_axis_tkeep,
+                            last_queue[tail]      := s_axis_tlast,
+                            err_queue[tail]       := s_axis_err;
+                            tail := tail + 1
+                        )
+                    }
+                );
+                else: skip
+            };
+            
+            // If it is not empty, then we can dequeue
+            send(deq_chan, ~(head = tail));
+            select {
+                case ~(head = tail): (
+                    send(m_axis_tdata_chan, data_queue[head]),
+                    send(m_axis_tkeep_chan,  keep_queue[head]),
+                    send(m_axis_tlast_chan,  last_queue[head]);
+                    head := head + 1
+                )
+            }
+        }
+    }
+}
