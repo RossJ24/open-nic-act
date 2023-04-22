@@ -5,8 +5,331 @@ function get_hash_window(
     int<320> key;
     int<8> offset
     ): int<32> {
+        bool key_arr[320];
+        int<32> ans;
         chp-txt {
-            self := (valid) ? key{offset+32 .. offset} : 0
+            key_arr[0] := bool(key{0}),
+            key_arr[1] := bool(key{1}),
+            key_arr[2] := bool(key{2}),
+            key_arr[3] := bool(key{3}),
+            key_arr[4] := bool(key{4}),
+            key_arr[5] := bool(key{5}),
+            key_arr[6] := bool(key{6}),
+            key_arr[7] := bool(key{7}),
+            key_arr[8] := bool(key{8}),
+            key_arr[9] := bool(key{9}),
+            key_arr[10] := bool(key{10}),
+            key_arr[11] := bool(key{11}),
+            key_arr[12] := bool(key{12}),
+            key_arr[13] := bool(key{13}),
+            key_arr[14] := bool(key{14}),
+            key_arr[15] := bool(key{15}),
+            key_arr[16] := bool(key{16}),
+            key_arr[17] := bool(key{17}),
+            key_arr[18] := bool(key{18}),
+            key_arr[19] := bool(key{19}),
+            key_arr[20] := bool(key{20}),
+            key_arr[21] := bool(key{21}),
+            key_arr[22] := bool(key{22}),
+            key_arr[23] := bool(key{23}),
+            key_arr[24] := bool(key{24}),
+            key_arr[25] := bool(key{25}),
+            key_arr[26] := bool(key{26}),
+            key_arr[27] := bool(key{27}),
+            key_arr[28] := bool(key{28}),
+            key_arr[29] := bool(key{29}),
+            key_arr[30] := bool(key{30}),
+            key_arr[31] := bool(key{31}),
+            key_arr[32] := bool(key{32}),
+            key_arr[33] := bool(key{33}),
+            key_arr[34] := bool(key{34}),
+            key_arr[35] := bool(key{35}),
+            key_arr[36] := bool(key{36}),
+            key_arr[37] := bool(key{37}),
+            key_arr[38] := bool(key{38}),
+            key_arr[39] := bool(key{39}),
+            key_arr[40] := bool(key{40}),
+            key_arr[41] := bool(key{41}),
+            key_arr[42] := bool(key{42}),
+            key_arr[43] := bool(key{43}),
+            key_arr[44] := bool(key{44}),
+            key_arr[45] := bool(key{45}),
+            key_arr[46] := bool(key{46}),
+            key_arr[47] := bool(key{47}),
+            key_arr[48] := bool(key{48}),
+            key_arr[49] := bool(key{49}),
+            key_arr[50] := bool(key{50}),
+            key_arr[51] := bool(key{51}),
+            key_arr[52] := bool(key{52}),
+            key_arr[53] := bool(key{53}),
+            key_arr[54] := bool(key{54}),
+            key_arr[55] := bool(key{55}),
+            key_arr[56] := bool(key{56}),
+            key_arr[57] := bool(key{57}),
+            key_arr[58] := bool(key{58}),
+            key_arr[59] := bool(key{59}),
+            key_arr[60] := bool(key{60}),
+            key_arr[61] := bool(key{61}),
+            key_arr[62] := bool(key{62}),
+            key_arr[63] := bool(key{63}),
+            key_arr[64] := bool(key{64}),
+            key_arr[65] := bool(key{65}),
+            key_arr[66] := bool(key{66}),
+            key_arr[67] := bool(key{67}),
+            key_arr[68] := bool(key{68}),
+            key_arr[69] := bool(key{69}),
+            key_arr[70] := bool(key{70}),
+            key_arr[71] := bool(key{71}),
+            key_arr[72] := bool(key{72}),
+            key_arr[73] := bool(key{73}),
+            key_arr[74] := bool(key{74}),
+            key_arr[75] := bool(key{75}),
+            key_arr[76] := bool(key{76}),
+            key_arr[77] := bool(key{77}),
+            key_arr[78] := bool(key{78}),
+            key_arr[79] := bool(key{79}),
+            key_arr[80] := bool(key{80}),
+            key_arr[81] := bool(key{81}),
+            key_arr[82] := bool(key{82}),
+            key_arr[83] := bool(key{83}),
+            key_arr[84] := bool(key{84}),
+            key_arr[85] := bool(key{85}),
+            key_arr[86] := bool(key{86}),
+            key_arr[87] := bool(key{87}),
+            key_arr[88] := bool(key{88}),
+            key_arr[89] := bool(key{89}),
+            key_arr[90] := bool(key{90}),
+            key_arr[91] := bool(key{91}),
+            key_arr[92] := bool(key{92}),
+            key_arr[93] := bool(key{93}),
+            key_arr[94] := bool(key{94}),
+            key_arr[95] := bool(key{95}),
+            key_arr[96] := bool(key{96}),
+            key_arr[97] := bool(key{97}),
+            key_arr[98] := bool(key{98}),
+            key_arr[99] := bool(key{99}),
+            key_arr[100] := bool(key{100}),
+            key_arr[101] := bool(key{101}),
+            key_arr[102] := bool(key{102}),
+            key_arr[103] := bool(key{103}),
+            key_arr[104] := bool(key{104}),
+            key_arr[105] := bool(key{105}),
+            key_arr[106] := bool(key{106}),
+            key_arr[107] := bool(key{107}),
+            key_arr[108] := bool(key{108}),
+            key_arr[109] := bool(key{109}),
+            key_arr[110] := bool(key{110}),
+            key_arr[111] := bool(key{111}),
+            key_arr[112] := bool(key{112}),
+            key_arr[113] := bool(key{113}),
+            key_arr[114] := bool(key{114}),
+            key_arr[115] := bool(key{115}),
+            key_arr[116] := bool(key{116}),
+            key_arr[117] := bool(key{117}),
+            key_arr[118] := bool(key{118}),
+            key_arr[119] := bool(key{119}),
+            key_arr[120] := bool(key{120}),
+            key_arr[121] := bool(key{121}),
+            key_arr[122] := bool(key{122}),
+            key_arr[123] := bool(key{123}),
+            key_arr[124] := bool(key{124}),
+            key_arr[125] := bool(key{125}),
+            key_arr[126] := bool(key{126}),
+            key_arr[127] := bool(key{127}),
+            key_arr[128] := bool(key{128}),
+            key_arr[129] := bool(key{129}),
+            key_arr[130] := bool(key{130}),
+            key_arr[131] := bool(key{131}),
+            key_arr[132] := bool(key{132}),
+            key_arr[133] := bool(key{133}),
+            key_arr[134] := bool(key{134}),
+            key_arr[135] := bool(key{135}),
+            key_arr[136] := bool(key{136}),
+            key_arr[137] := bool(key{137}),
+            key_arr[138] := bool(key{138}),
+            key_arr[139] := bool(key{139}),
+            key_arr[140] := bool(key{140}),
+            key_arr[141] := bool(key{141}),
+            key_arr[142] := bool(key{142}),
+            key_arr[143] := bool(key{143}),
+            key_arr[144] := bool(key{144}),
+            key_arr[145] := bool(key{145}),
+            key_arr[146] := bool(key{146}),
+            key_arr[147] := bool(key{147}),
+            key_arr[148] := bool(key{148}),
+            key_arr[149] := bool(key{149}),
+            key_arr[150] := bool(key{150}),
+            key_arr[151] := bool(key{151}),
+            key_arr[152] := bool(key{152}),
+            key_arr[153] := bool(key{153}),
+            key_arr[154] := bool(key{154}),
+            key_arr[155] := bool(key{155}),
+            key_arr[156] := bool(key{156}),
+            key_arr[157] := bool(key{157}),
+            key_arr[158] := bool(key{158}),
+            key_arr[159] := bool(key{159}),
+            key_arr[160] := bool(key{160}),
+            key_arr[161] := bool(key{161}),
+            key_arr[162] := bool(key{162}),
+            key_arr[163] := bool(key{163}),
+            key_arr[164] := bool(key{164}),
+            key_arr[165] := bool(key{165}),
+            key_arr[166] := bool(key{166}),
+            key_arr[167] := bool(key{167}),
+            key_arr[168] := bool(key{168}),
+            key_arr[169] := bool(key{169}),
+            key_arr[170] := bool(key{170}),
+            key_arr[171] := bool(key{171}),
+            key_arr[172] := bool(key{172}),
+            key_arr[173] := bool(key{173}),
+            key_arr[174] := bool(key{174}),
+            key_arr[175] := bool(key{175}),
+            key_arr[176] := bool(key{176}),
+            key_arr[177] := bool(key{177}),
+            key_arr[178] := bool(key{178}),
+            key_arr[179] := bool(key{179}),
+            key_arr[180] := bool(key{180}),
+            key_arr[181] := bool(key{181}),
+            key_arr[182] := bool(key{182}),
+            key_arr[183] := bool(key{183}),
+            key_arr[184] := bool(key{184}),
+            key_arr[185] := bool(key{185}),
+            key_arr[186] := bool(key{186}),
+            key_arr[187] := bool(key{187}),
+            key_arr[188] := bool(key{188}),
+            key_arr[189] := bool(key{189}),
+            key_arr[190] := bool(key{190}),
+            key_arr[191] := bool(key{191}),
+            key_arr[192] := bool(key{192}),
+            key_arr[193] := bool(key{193}),
+            key_arr[194] := bool(key{194}),
+            key_arr[195] := bool(key{195}),
+            key_arr[196] := bool(key{196}),
+            key_arr[197] := bool(key{197}),
+            key_arr[198] := bool(key{198}),
+            key_arr[199] := bool(key{199}),
+            key_arr[200] := bool(key{200}),
+            key_arr[201] := bool(key{201}),
+            key_arr[202] := bool(key{202}),
+            key_arr[203] := bool(key{203}),
+            key_arr[204] := bool(key{204}),
+            key_arr[205] := bool(key{205}),
+            key_arr[206] := bool(key{206}),
+            key_arr[207] := bool(key{207}),
+            key_arr[208] := bool(key{208}),
+            key_arr[209] := bool(key{209}),
+            key_arr[210] := bool(key{210}),
+            key_arr[211] := bool(key{211}),
+            key_arr[212] := bool(key{212}),
+            key_arr[213] := bool(key{213}),
+            key_arr[214] := bool(key{214}),
+            key_arr[215] := bool(key{215}),
+            key_arr[216] := bool(key{216}),
+            key_arr[217] := bool(key{217}),
+            key_arr[218] := bool(key{218}),
+            key_arr[219] := bool(key{219}),
+            key_arr[220] := bool(key{220}),
+            key_arr[221] := bool(key{221}),
+            key_arr[222] := bool(key{222}),
+            key_arr[223] := bool(key{223}),
+            key_arr[224] := bool(key{224}),
+            key_arr[225] := bool(key{225}),
+            key_arr[226] := bool(key{226}),
+            key_arr[227] := bool(key{227}),
+            key_arr[228] := bool(key{228}),
+            key_arr[229] := bool(key{229}),
+            key_arr[230] := bool(key{230}),
+            key_arr[231] := bool(key{231}),
+            key_arr[232] := bool(key{232}),
+            key_arr[233] := bool(key{233}),
+            key_arr[234] := bool(key{234}),
+            key_arr[235] := bool(key{235}),
+            key_arr[236] := bool(key{236}),
+            key_arr[237] := bool(key{237}),
+            key_arr[238] := bool(key{238}),
+            key_arr[239] := bool(key{239}),
+            key_arr[240] := bool(key{240}),
+            key_arr[241] := bool(key{241}),
+            key_arr[242] := bool(key{242}),
+            key_arr[243] := bool(key{243}),
+            key_arr[244] := bool(key{244}),
+            key_arr[245] := bool(key{245}),
+            key_arr[246] := bool(key{246}),
+            key_arr[247] := bool(key{247}),
+            key_arr[248] := bool(key{248}),
+            key_arr[249] := bool(key{249}),
+            key_arr[250] := bool(key{250}),
+            key_arr[251] := bool(key{251}),
+            key_arr[252] := bool(key{252}),
+            key_arr[253] := bool(key{253}),
+            key_arr[254] := bool(key{254}),
+            key_arr[255] := bool(key{255}),
+            key_arr[256] := bool(key{256}),
+            key_arr[257] := bool(key{257}),
+            key_arr[258] := bool(key{258}),
+            key_arr[259] := bool(key{259}),
+            key_arr[260] := bool(key{260}),
+            key_arr[261] := bool(key{261}),
+            key_arr[262] := bool(key{262}),
+            key_arr[263] := bool(key{263}),
+            key_arr[264] := bool(key{264}),
+            key_arr[265] := bool(key{265}),
+            key_arr[266] := bool(key{266}),
+            key_arr[267] := bool(key{267}),
+            key_arr[268] := bool(key{268}),
+            key_arr[269] := bool(key{269}),
+            key_arr[270] := bool(key{270}),
+            key_arr[271] := bool(key{271}),
+            key_arr[272] := bool(key{272}),
+            key_arr[273] := bool(key{273}),
+            key_arr[274] := bool(key{274}),
+            key_arr[275] := bool(key{275}),
+            key_arr[276] := bool(key{276}),
+            key_arr[277] := bool(key{277}),
+            key_arr[278] := bool(key{278}),
+            key_arr[279] := bool(key{279}),
+            key_arr[280] := bool(key{280}),
+            key_arr[281] := bool(key{281}),
+            key_arr[282] := bool(key{282}),
+            key_arr[283] := bool(key{283}),
+            key_arr[284] := bool(key{284}),
+            key_arr[285] := bool(key{285}),
+            key_arr[286] := bool(key{286}),
+            key_arr[287] := bool(key{287}),
+            key_arr[288] := bool(key{288}),
+            key_arr[289] := bool(key{289}),
+            key_arr[290] := bool(key{290}),
+            key_arr[291] := bool(key{291}),
+            key_arr[292] := bool(key{292}),
+            key_arr[293] := bool(key{293}),
+            key_arr[294] := bool(key{294}),
+            key_arr[295] := bool(key{295}),
+            key_arr[296] := bool(key{296}),
+            key_arr[297] := bool(key{297}),
+            key_arr[298] := bool(key{298}),
+            key_arr[299] := bool(key{299}),
+            key_arr[300] := bool(key{300}),
+            key_arr[301] := bool(key{301}),
+            key_arr[302] := bool(key{302}),
+            key_arr[303] := bool(key{303}),
+            key_arr[304] := bool(key{304}),
+            key_arr[305] := bool(key{305}),
+            key_arr[306] := bool(key{306}),
+            key_arr[307] := bool(key{307}),
+            key_arr[308] := bool(key{308}),
+            key_arr[309] := bool(key{309}),
+            key_arr[310] := bool(key{310}),
+            key_arr[311] := bool(key{311}),
+            key_arr[312] := bool(key{312}),
+            key_arr[313] := bool(key{313}),
+            key_arr[314] := bool(key{314}),
+            key_arr[315] := bool(key{315}),
+            key_arr[316] := bool(key{316}),
+            key_arr[317] := bool(key{317}),
+            key_arr[318] := bool(key{318}),
+            key_arr[319] := bool(key{319});
+            ans := {key_arr[offset + 0], key_arr[offset + 1], key_arr[offset + 2], key_arr[offset + 3], key_arr[offset + 4], key_arr[offset + 5], key_arr[offset + 6], key_arr[offset + 7], key_arr[offset + 8], key_arr[offset + 9], key_arr[offset + 10], key_arr[offset + 11], key_arr[offset + 12], key_arr[offset + 13], key_arr[offset + 14], key_arr[offset + 15], key_arr[offset + 16], key_arr[offset + 17], key_arr[offset + 18], key_arr[offset + 19], key_arr[offset + 20], key_arr[offset + 21], key_arr[offset + 22], key_arr[offset + 23], key_arr[offset + 24], key_arr[offset + 25], key_arr[offset + 26], key_arr[offset + 27], key_arr[offset + 28], key_arr[offset + 29], key_arr[offset + 30], key_arr[offset + 31]};
+            self := (valid) ? ans : 0
         }
     }
 
@@ -93,7 +416,7 @@ defproc qdma_subsystem_hash(
     int<32>  port_hash[2];
     int i;
     
-    int<32> hash_res
+    int<32> hash_result;
 
     chp-txt {
         next_vid_shift_reg[0]   := 0;
@@ -118,7 +441,7 @@ defproc qdma_subsystem_hash(
                                 next_eth_payload := 0;
                                 i := 0;
                                 while(i < 8*50){
-                                    next_eth_payload := next_eth_payload | p_axis_tdata{14*8 + i} << i
+                                    next_eth_payload := next_eth_payload | p_axis_tdata{64*8 .. 14*8}
                                 };
                                 next_eth_type_is_ip4 := true;
                                 next_eth_is_8021q := false
@@ -129,7 +452,7 @@ defproc qdma_subsystem_hash(
                                 next_eth_payload := 0;
                                 i := 0;
                                 while(i < 8*46){
-                                    next_eth_payload := next_eth_payload | p_axis_tdata{18*8 + i} << i
+                                    next_eth_payload := next_eth_payload | p_axis_tdata{64*8 .. 18*8}
                                 };
                                 next_eth_type_is_ip4 := (eth_8021q_type = C_ETH_TYPE_IP4);
                                 next_eth_is_8021q    := true
@@ -156,10 +479,7 @@ defproc qdma_subsystem_hash(
                 case s1_state = S_S1_MORE: (
                     select {
                         case ~eth_is_8021q: (
-                            i := 0;
-                            while(i < 8*14) {
-                                next_eth_payload := next_eth_payload | p_axis_tdata{i} << ((50 *8) + i)
-                            }
+                            next_eth_payload := next_eth_payload | p_axis_tdata{14*8..0} << ((50 *8))
                         );
                         else:(
                             next_eth_payload := next_eth_payload | (p_axis_tdata{144..0} << (46*8))
@@ -238,48 +558,111 @@ defproc qdma_subsystem_hash(
             };
             select {
                 case ip4_payload_valid: (
-                    ip4_hash[0] := 0,
-                    i := 0;
-                    while(i < 18) {
-                        ip4_hash[0] := ip4_hash[0] ^ get_hash_window(bool(ip4_tuple{i + 0*18}), hash_key, 4 + i + 0*18);
-                        i := i + 1
-                    };
+                    ip4_hash[0] := get_hash_window(bool(ip4_tuple{0 + 0*18}), hash_key, 4 + 0 + 0*18) ^
+                                    get_hash_window(bool(ip4_tuple{1 + 0*18}), hash_key, 4 + 1 + 0*18) ^
+                                    get_hash_window(bool(ip4_tuple{2 + 0*18}), hash_key, 4 + 2 + 0*18) ^
+                                    get_hash_window(bool(ip4_tuple{3 + 0*18}), hash_key, 4 + 3 + 0*18) ^
+                                    get_hash_window(bool(ip4_tuple{4 + 0*18}), hash_key, 4 + 4 + 0*18) ^
+                                    get_hash_window(bool(ip4_tuple{5 + 0*18}), hash_key, 4 + 5 + 0*18) ^
+                                    get_hash_window(bool(ip4_tuple{6 + 0*18}), hash_key, 4 + 6 + 0*18) ^
+                                    get_hash_window(bool(ip4_tuple{7 + 0*18}), hash_key, 4 + 7 + 0*18) ^
+                                    get_hash_window(bool(ip4_tuple{8 + 0*18}), hash_key, 4 + 8 + 0*18) ^
+                                    get_hash_window(bool(ip4_tuple{9 + 0*18}), hash_key, 4 + 9 + 0*18) ^
+                                    get_hash_window(bool(ip4_tuple{10 + 0*18}), hash_key, 4 + 10 + 0*18) ^
+                                    get_hash_window(bool(ip4_tuple{11 + 0*18}), hash_key, 4 + 11 + 0*18) ^
+                                    get_hash_window(bool(ip4_tuple{12 + 0*18}), hash_key, 4 + 12 + 0*18) ^
+                                    get_hash_window(bool(ip4_tuple{13 + 0*18}), hash_key, 4 + 13 + 0*18) ^
+                                    get_hash_window(bool(ip4_tuple{14 + 0*18}), hash_key, 4 + 14 + 0*18) ^
+                                    get_hash_window(bool(ip4_tuple{15 + 0*18}), hash_key, 4 + 15 + 0*18) ^
+                                    get_hash_window(bool(ip4_tuple{16 + 0*18}), hash_key, 4 + 16 + 0*18) ^
+                                    get_hash_window(bool(ip4_tuple{17 + 0*18}), hash_key, 4 + 17 + 0*18);
+                    ip4_hash[1] := get_hash_window(bool(ip4_tuple{0 + 1*18}), hash_key, 4 + 0 + 1*18) ^
+                                    get_hash_window(bool(ip4_tuple{1 + 1*18}), hash_key, 4 + 1 + 1*18) ^
+                                    get_hash_window(bool(ip4_tuple{2 + 1*18}), hash_key, 4 + 2 + 1*18) ^
+                                    get_hash_window(bool(ip4_tuple{3 + 1*18}), hash_key, 4 + 3 + 1*18) ^
+                                    get_hash_window(bool(ip4_tuple{4 + 1*18}), hash_key, 4 + 4 + 1*18) ^
+                                    get_hash_window(bool(ip4_tuple{5 + 1*18}), hash_key, 4 + 5 + 1*18) ^
+                                    get_hash_window(bool(ip4_tuple{6 + 1*18}), hash_key, 4 + 6 + 1*18) ^
+                                    get_hash_window(bool(ip4_tuple{7 + 1*18}), hash_key, 4 + 7 + 1*18) ^
+                                    get_hash_window(bool(ip4_tuple{8 + 1*18}), hash_key, 4 + 8 + 1*18) ^
+                                    get_hash_window(bool(ip4_tuple{9 + 1*18}), hash_key, 4 + 9 + 1*18) ^
+                                    get_hash_window(bool(ip4_tuple{10 + 1*18}), hash_key, 4 + 10 + 1*18) ^
+                                    get_hash_window(bool(ip4_tuple{11 + 1*18}), hash_key, 4 + 11 + 1*18) ^
+                                    get_hash_window(bool(ip4_tuple{12 + 1*18}), hash_key, 4 + 12 + 1*18) ^
+                                    get_hash_window(bool(ip4_tuple{13 + 1*18}), hash_key, 4 + 13 + 1*18) ^
+                                    get_hash_window(bool(ip4_tuple{14 + 1*18}), hash_key, 4 + 14 + 1*18) ^
+                                    get_hash_window(bool(ip4_tuple{15 + 1*18}), hash_key, 4 + 15 + 1*18) ^
+                                    get_hash_window(bool(ip4_tuple{16 + 1*18}), hash_key, 4 + 16 + 1*18) ^
+                                    get_hash_window(bool(ip4_tuple{17 + 1*18}), hash_key, 4 + 17 + 1*18);
+                    ip4_hash[2] := get_hash_window(bool(ip4_tuple{0 + 2*18}), hash_key, 4 + 0 + 2*18) ^
+                                    get_hash_window(bool(ip4_tuple{1 + 2*18}), hash_key, 4 + 1 + 2*18) ^
+                                    get_hash_window(bool(ip4_tuple{2 + 2*18}), hash_key, 4 + 2 + 2*18) ^
+                                    get_hash_window(bool(ip4_tuple{3 + 2*18}), hash_key, 4 + 3 + 2*18) ^
+                                    get_hash_window(bool(ip4_tuple{4 + 2*18}), hash_key, 4 + 4 + 2*18) ^
+                                    get_hash_window(bool(ip4_tuple{5 + 2*18}), hash_key, 4 + 5 + 2*18) ^
+                                    get_hash_window(bool(ip4_tuple{6 + 2*18}), hash_key, 4 + 6 + 2*18) ^
+                                    get_hash_window(bool(ip4_tuple{7 + 2*18}), hash_key, 4 + 7 + 2*18) ^
+                                    get_hash_window(bool(ip4_tuple{8 + 2*18}), hash_key, 4 + 8 + 2*18) ^
+                                    get_hash_window(bool(ip4_tuple{9 + 2*18}), hash_key, 4 + 9 + 2*18) ^
+                                    get_hash_window(bool(ip4_tuple{10 + 2*18}), hash_key, 4 + 10 + 2*18) ^
+                                    get_hash_window(bool(ip4_tuple{11 + 2*18}), hash_key, 4 + 11 + 2*18) ^
+                                    get_hash_window(bool(ip4_tuple{12 + 2*18}), hash_key, 4 + 12 + 2*18) ^
+                                    get_hash_window(bool(ip4_tuple{13 + 2*18}), hash_key, 4 + 13 + 2*18) ^
+                                    get_hash_window(bool(ip4_tuple{14 + 2*18}), hash_key, 4 + 14 + 2*18) ^
+                                    get_hash_window(bool(ip4_tuple{15 + 2*18}), hash_key, 4 + 15 + 2*18) ^
+                                    get_hash_window(bool(ip4_tuple{16 + 2*18}), hash_key, 4 + 16 + 2*18) ^
+                                    get_hash_window(bool(ip4_tuple{17 + 2*18}), hash_key, 4 + 17 + 2*18);
+                    ip4_hash[3] := get_hash_window(bool(ip4_tuple{0 + 3*18}), hash_key, 4 + 0 + 3*18) ^
+                                    get_hash_window(bool(ip4_tuple{1 + 3*18}), hash_key, 4 + 1 + 3*18) ^
+                                    get_hash_window(bool(ip4_tuple{2 + 3*18}), hash_key, 4 + 2 + 3*18) ^
+                                    get_hash_window(bool(ip4_tuple{3 + 3*18}), hash_key, 4 + 3 + 3*18) ^
+                                    get_hash_window(bool(ip4_tuple{4 + 3*18}), hash_key, 4 + 4 + 3*18) ^
+                                    get_hash_window(bool(ip4_tuple{5 + 3*18}), hash_key, 4 + 5 + 3*18) ^
+                                    get_hash_window(bool(ip4_tuple{6 + 3*18}), hash_key, 4 + 6 + 3*18) ^
+                                    get_hash_window(bool(ip4_tuple{7 + 3*18}), hash_key, 4 + 7 + 3*18) ^
+                                    get_hash_window(bool(ip4_tuple{8 + 3*18}), hash_key, 4 + 8 + 3*18) ^
+                                    get_hash_window(bool(ip4_tuple{9 + 3*18}), hash_key, 4 + 9 + 3*18) ^
+                                    get_hash_window(bool(ip4_tuple{10 + 3*18}), hash_key, 4 + 10 + 3*18) ^
+                                    get_hash_window(bool(ip4_tuple{11 + 3*18}), hash_key, 4 + 11 + 3*18) ^
+                                    get_hash_window(bool(ip4_tuple{12 + 3*18}), hash_key, 4 + 12 + 3*18) ^
+                                    get_hash_window(bool(ip4_tuple{13 + 3*18}), hash_key, 4 + 13 + 3*18) ^
+                                    get_hash_window(bool(ip4_tuple{14 + 3*18}), hash_key, 4 + 14 + 3*18) ^
+                                    get_hash_window(bool(ip4_tuple{15 + 3*18}), hash_key, 4 + 15 + 3*18) ^
+                                    get_hash_window(bool(ip4_tuple{16 + 3*18}), hash_key, 4 + 16 + 3*18) ^
+                                    get_hash_window(bool(ip4_tuple{17 + 3*18}), hash_key, 4 + 17 + 3*18);
                     
-                    ip4_hash[1] := 0,
-                    i := 0;
-                    while(i < 18) {
-                        ip4_hash[1] := ip4_hash[1] ^ get_hash_window(bool(ip4_tuple{i + 1*18}), hash_key, 4 + i + 1*18);
-                        i := i + 1
-                    };
-                    
-                    ip4_hash[2] := 0,
-                    i := 0;
-                    while(i < 18) {
-                        ip4_hash[2] := ip4_hash[2] ^ get_hash_window(bool(ip4_tuple{i + 2*18}), hash_key, 4 + i + 2*18);
-                        i := i + 1
-                    };
-
-                    ip4_hash[3] := 0,
-                    i := 0;
-                    while(i < 18) {
-                        ip4_hash[3] := ip4_hash[3] ^ get_hash_window(bool(ip4_tuple{i + 3*18}), hash_key, 4 + i + 3*18);
-                        i := i + 1
-                    };
-                    
-
-                    port_hash[0] := 0,
-                    i := 0;
-                    while(i < 16){
-                        port_hash[0] := port_hash[0] ^ get_hash_window(bool(ip4_payload{i + 0*16}), hash_key, 76 + i + 0*16);
-                        i := i + 1
-                    };
-                    
-                    port_hash[1] := 0,
-                    i := 0;
-                    while(i < 16){
-                        port_hash[1] := port_hash[1] ^ get_hash_window(bool(ip4_payload{i + 1*16}), hash_key, 76 + i + 1*16);
-                        i := i + 1
-                    }
+                    port_hash[0] := get_hash_window(bool(ip4_payload{0 + 0*16}), hash_key, 76 + 0 + 0*16) ^
+                                    get_hash_window(bool(ip4_payload{1 + 0*16}), hash_key, 76 + 1 + 0*16) ^
+                                    get_hash_window(bool(ip4_payload{2 + 0*16}), hash_key, 76 + 2 + 0*16) ^
+                                    get_hash_window(bool(ip4_payload{3 + 0*16}), hash_key, 76 + 3 + 0*16) ^
+                                    get_hash_window(bool(ip4_payload{4 + 0*16}), hash_key, 76 + 4 + 0*16) ^
+                                    get_hash_window(bool(ip4_payload{5 + 0*16}), hash_key, 76 + 5 + 0*16) ^
+                                    get_hash_window(bool(ip4_payload{6 + 0*16}), hash_key, 76 + 6 + 0*16) ^
+                                    get_hash_window(bool(ip4_payload{7 + 0*16}), hash_key, 76 + 7 + 0*16) ^
+                                    get_hash_window(bool(ip4_payload{8 + 0*16}), hash_key, 76 + 8 + 0*16) ^
+                                    get_hash_window(bool(ip4_payload{9 + 0*16}), hash_key, 76 + 9 + 0*16) ^
+                                    get_hash_window(bool(ip4_payload{10 + 0*16}), hash_key, 76 + 10 + 0*16) ^
+                                    get_hash_window(bool(ip4_payload{11 + 0*16}), hash_key, 76 + 11 + 0*16) ^
+                                    get_hash_window(bool(ip4_payload{12 + 0*16}), hash_key, 76 + 12 + 0*16) ^
+                                    get_hash_window(bool(ip4_payload{13 + 0*16}), hash_key, 76 + 13 + 0*16) ^
+                                    get_hash_window(bool(ip4_payload{14 + 0*16}), hash_key, 76 + 14 + 0*16) ^
+                                    get_hash_window(bool(ip4_payload{15 + 0*16}), hash_key, 76 + 15 + 0*16);
+                    port_hash[1] := get_hash_window(bool(ip4_payload{0 + 1*16}), hash_key, 76 + 0 + 1*16) ^
+                                    get_hash_window(bool(ip4_payload{1 + 1*16}), hash_key, 76 + 1 + 1*16) ^
+                                    get_hash_window(bool(ip4_payload{2 + 1*16}), hash_key, 76 + 2 + 1*16) ^
+                                    get_hash_window(bool(ip4_payload{3 + 1*16}), hash_key, 76 + 3 + 1*16) ^
+                                    get_hash_window(bool(ip4_payload{4 + 1*16}), hash_key, 76 + 4 + 1*16) ^
+                                    get_hash_window(bool(ip4_payload{5 + 1*16}), hash_key, 76 + 5 + 1*16) ^
+                                    get_hash_window(bool(ip4_payload{6 + 1*16}), hash_key, 76 + 6 + 1*16) ^
+                                    get_hash_window(bool(ip4_payload{7 + 1*16}), hash_key, 76 + 7 + 1*16) ^
+                                    get_hash_window(bool(ip4_payload{8 + 1*16}), hash_key, 76 + 8 + 1*16) ^
+                                    get_hash_window(bool(ip4_payload{9 + 1*16}), hash_key, 76 + 9 + 1*16) ^
+                                    get_hash_window(bool(ip4_payload{10 + 1*16}), hash_key, 76 + 10 + 1*16) ^
+                                    get_hash_window(bool(ip4_payload{11 + 1*16}), hash_key, 76 + 11 + 1*16) ^
+                                    get_hash_window(bool(ip4_payload{12 + 1*16}), hash_key, 76 + 12 + 1*16) ^
+                                    get_hash_window(bool(ip4_payload{13 + 1*16}), hash_key, 76 + 13 + 1*16) ^
+                                    get_hash_window(bool(ip4_payload{14 + 1*16}), hash_key, 76 + 14 + 1*16) ^
+                                    get_hash_window(bool(ip4_payload{15 + 1*16}), hash_key, 76 + 15 + 1*16)
                 );
                 else: skip
             };
