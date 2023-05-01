@@ -1,0 +1,115 @@
+// Default arguments 64, 1518, 1, 1, 1
+template <pint MIN_PKT_LEN; pint MAX_PKT_LEN; pint USE_PHYS_FUNC; pint NUM_PHYS_FUNC; pint NUM_CMAC_PORT>
+defproc box_250mhz(
+    
+    chan?(int<512*NUM_PHYS_FUNC-1>) s_axis_qdma_h2c_tdata_chan;
+    chan?(int<64*NUM_PHYS_FUNC-1>) s_axis_qdma_h2c_tkeep_chan;
+    chan?(int<NUM_PHYS_FUNC-1>) s_axis_qdma_h2c_tlast_chan;
+    chan?(int<16*NUM_PHYS_FUNC-1>) s_axis_qdma_h2c_tuser_size_chan;
+    chan?(int<16*NUM_PHYS_FUNC-1>) s_axis_qdma_h2c_tuser_src_chan;
+    chan?(int<16*NUM_PHYS_FUNC-1>) s_axis_qdma_h2c_tuser_dst_chan;
+    
+    chan!(int<512*NUM_PHYS_FUNC-1>) m_axis_qdma_c2h_tdata_chan;
+    chan!(int<64*NUM_PHYS_FUNC-1>) m_axis_qdma_c2h_tkeep_chan;
+    chan!(int<NUM_PHYS_FUNC-1>) m_axis_qdma_c2h_tlast_chan;
+    chan!(int<16*NUM_PHYS_FUNC-1>) m_axis_qdma_c2h_tuser_size_chan;
+    chan!(int<16*NUM_PHYS_FUNC-1>) m_axis_qdma_c2h_tuser_src_chan;
+    chan!(int<16*NUM_PHYS_FUNC-1>) m_axis_qdma_c2h_tuser_dst_chan;
+
+    chan!(int<512*NUM_CMAC_PORT-1>) m_axis_adap_tx_250mhz_tdata_chan;
+    chan!(int<64*NUM_CMAC_PORT-1>) m_axis_adap_tx_250mhz_tkeep_chan;
+    chan!(int<NUM_CMAC_PORT-1>) m_axis_adap_tx_250mhz_tlast_chan;
+    chan!(int<16*NUM_CMAC_PORT-1>) m_axis_adap_tx_250mhz_tuser_size_chan;
+    chan!(int<16*NUM_CMAC_PORT-1>) m_axis_adap_tx_250mhz_tuser_src_chan;
+    chan!(int<16*NUM_CMAC_PORT-1>) m_axis_adap_tx_250mhz_tuser_dst_chan;
+
+    chan?(int<512*NUM_CMAC_PORT-1>) s_axis_adap_rx_250mhz_tdata_chan;
+    chan?(int<64*NUM_CMAC_PORT-1>) s_axis_adap_rx_250mhz_tkeep_chan;
+    chan?(int<NUM_CMAC_PORT-1>) s_axis_adap_rx_250mhz_tlast_chan;
+    chan?(int<16*NUM_CMAC_PORT-1>) s_axis_adap_rx_250mhz_tuser_size_chan;
+    chan?(int<16*NUM_CMAC_PORT-1>) s_axis_adap_rx_250mhz_tuser_src_chan;
+    chan?(int<16*NUM_CMAC_PORT-1>) s_axis_adap_rx_250mhz_tuser_dst_chan;
+
+    chan?(int<15>) mod_rstn_chan;
+    chan!(int<15>) mod_rst_done_chan;
+
+    chan?(bool)  box_rstn_chan;
+    chan!(bool) box_rst_done_chan
+) {
+
+    int<512*NUM_PHYS_FUNC-1> s_axis_qdma_h2c_tdata;
+    int<64*NUM_PHYS_FUNC-1> s_axis_qdma_h2c_tkeep;
+    int<NUM_PHYS_FUNC-1> s_axis_qdma_h2c_tlast;
+    int<16*NUM_PHYS_FUNC-1> s_axis_qdma_h2c_tuser_size;
+    int<16*NUM_PHYS_FUNC-1> s_axis_qdma_h2c_tuser_src;
+    int<16*NUM_PHYS_FUNC-1> s_axis_qdma_h2c_tuser_dst;
+    
+    chan!(int<512*NUM_PHYS_FUNC-1>) m_axis_qdma_c2h_tdata;
+    chan!(int<64*NUM_PHYS_FUNC-1>) m_axis_qdma_c2h_tkeep;
+    chan!(int<NUM_PHYS_FUNC-1>) m_axis_qdma_c2h_tlast;
+    chan!(int<16*NUM_PHYS_FUNC-1>) m_axis_qdma_c2h_tuser_size;
+    chan!(int<16*NUM_PHYS_FUNC-1>) m_axis_qdma_c2h_tuser_src;
+    chan!(int<16*NUM_PHYS_FUNC-1>) m_axis_qdma_c2h_tuser_dst;
+
+    chan!(int<512*NUM_CMAC_PORT-1>) m_axis_adap_tx_250mhz_tdata;
+    chan!(int<64*NUM_CMAC_PORT-1>) m_axis_adap_tx_250mhz_tkeep;
+    chan!(int<NUM_CMAC_PORT-1>) m_axis_adap_tx_250mhz_tlast;
+    chan!(int<16*NUM_CMAC_PORT-1>) m_axis_adap_tx_250mhz_tuser_size;
+    chan!(int<16*NUM_CMAC_PORT-1>) m_axis_adap_tx_250mhz_tuser_src;
+    chan!(int<16*NUM_CMAC_PORT-1>) m_axis_adap_tx_250mhz_tuser_dst;
+
+    int<512*NUM_CMAC_PORT-1> s_axis_adap_rx_250mhz_tdata;
+    int<64*NUM_CMAC_PORT-1> s_axis_adap_rx_250mhz_tkeep;
+    int<NUM_CMAC_PORT-1> s_axis_adap_rx_250mhz_tlast;
+    int<16*NUM_CMAC_PORT-1> s_axis_adap_rx_250mhz_tuser_size;
+    int<16*NUM_CMAC_PORT-1> s_axis_adap_rx_250mhz_tuser_src;
+    int<16*NUM_CMAC_PORT-1> s_axis_adap_rx_250mhz_tuser_dst;
+
+    chp-txt {
+        forever {
+            select{
+                case #s_axis_qdma_h2c_tdata_chan: (
+                    recv(s_axis_qdma_h2c_tdata_chan, s_axis_qdma_h2c_tdata),
+                    recv(s_axis_qdma_h2c_tkeep_chan, s_axis_qdma_h2c_tkeep),
+                    recv(s_axis_qdma_h2c_tlast_chan, s_axis_qdma_h2c_tlast),
+                    recv(s_axis_qdma_h2c_tuser_size_chan, s_axis_qdma_h2c_tuser_size),
+                    recv(s_axis_qdma_h2c_tuser_src_chan, s_axis_qdma_h2c_tuser_src),
+                    recv(s_axis_qdma_h2c_tuser_dst_chan, s_axis_qdma_h2c_tuser_dst);
+                    
+                    // Insert custom logic here
+                    
+                    send(m_axis_adap_tx_250mhz_tdata_chan, s_axis_qdma_h2c_tdata),
+                    send(m_axis_adap_tx_250mhz_tkeep_chan, s_axis_qdma_h2c_tkeep),
+                    send(m_axis_adap_tx_250mhz_tlast_chan, s_axis_qdma_h2c_tlast),
+                    send(m_axis_adap_tx_250mhz_tuser_size_chan, s_axis_qdma_h2c_tuser_size),
+                    send(m_axis_adap_tx_250mhz_tuser_src_chan, s_axis_qdma_h2c_tuser_src),
+                    send(m_axis_adap_tx_250mhz_tuser_dst_chan, s_axis_qdma_h2c_tuser_dst)
+                );
+                else: skip
+            };
+
+            select{
+                case #s_axis_adap_rx_250mhz_tdata_chan: (
+                    recv(s_axis_adap_rx_250mhz_tdata_chan, s_axis_adap_rx_250mhz_tdata),
+                    recv(s_axis_adap_rx_250mhz_tkeep_chan, s_axis_adap_rx_250mhz_tkeep),
+                    recv(s_axis_adap_rx_250mhz_tlast_chan, s_axis_adap_rx_250mhz_tlast),
+                    recv(s_axis_adap_rx_250mhz_tuser_src_chan, s_axis_adap_rx_250mhz_tuser_src),
+                    recv(s_axis_adap_rx_250mhz_tuser_size_chan, s_axis_adap_rx_250mhz_tuser_size),
+                    recv(s_axis_adap_rx_250mhz_tuser_src_chan, s_axis_adap_rx_250mhz_tuser_src),
+                    recv(s_axis_adap_rx_250mhz_tuser_dst_chan, s_axis_adap_rx_250mhz_tuser_dst);
+
+                    // Insert custom logic here
+                    
+                    send(m_axis_qdma_c2h_tdata_chan, s_axis_adap_rx_250mhz_tdata),
+                    send(m_axis_qdma_c2h_tkeep_chan, s_axis_adap_rx_250mhz_tkeep),
+                    send(m_axis_qdma_c2h_tlast_chan, s_axis_adap_rx_250mhz_tlast),
+                    send(m_axis_qdma_c2h_tuser_size_chan, s_axis_adap_rx_250mhz_tuser_size),
+                    send(m_axis_qdma_c2h_tuser_src_chan, s_axis_adap_rx_250mhz_tuser_src),
+                    send(m_axis_qdma_c2h_tuser_dst_chan, s_axis_adap_rx_250mhz_tuser_dst)
+
+                );
+                else: skip
+            }   
+        }
+    }
+}

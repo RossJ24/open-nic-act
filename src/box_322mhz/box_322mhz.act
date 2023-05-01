@@ -1,0 +1,84 @@
+// defaults 64; 1518; 1
+template<pint MIN_PKT_LEN; pint MAX_PKT_LEN; pint NUM_CMAC_PORT>
+defproc box_322mhz (
+chan(int  <512*NUM_CMAC_PORT>)? s_axis_adap_tx_322mhz_tdata_chan;
+chan(int   <64*NUM_CMAC_PORT>)? s_axis_adap_tx_322mhz_tkeep_chan;
+chan(int      <NUM_CMAC_PORT>)? s_axis_adap_tx_322mhz_tlast_chan;
+chan(int      <NUM_CMAC_PORT>)? s_axis_adap_tx_322mhz_tuser_err_chan;
+
+chan(int <512*NUM_CMAC_PORT>)! m_axis_adap_rx_322mhz_tdata_chan;
+chan(int  <64*NUM_CMAC_PORT>)! m_axis_adap_rx_322mhz_tkeep_chan;
+chan(int     <NUM_CMAC_PORT>)! m_axis_adap_rx_322mhz_tlast_chan;
+chan(int     <NUM_CMAC_PORT>)! m_axis_adap_rx_322mhz_tuser_err_chan;
+
+chan(int <512*NUM_CMAC_PORT>)! m_axis_cmac_tx_tdata_chan;
+chan(int  <64*NUM_CMAC_PORT>)! m_axis_cmac_tx_tkeep_chan;
+chan(int     <NUM_CMAC_PORT>)! m_axis_cmac_tx_tlast_chan;
+chan(int     <NUM_CMAC_PORT>)! m_axis_cmac_tx_tuser_err_chan;
+
+chan(int  <512*NUM_CMAC_PORT>)? s_axis_cmac_rx_tdata_chan;
+chan(int   <64*NUM_CMAC_PORT>)? s_axis_cmac_rx_tkeep_chan;
+chan(int      <NUM_CMAC_PORT>)? s_axis_cmac_rx_tlast_chan;
+chan(int      <NUM_CMAC_PORT>)? s_axis_cmac_rx_tuser_err_chan
+) {
+
+int  <512*NUM_CMAC_PORT> s_axis_adap_tx_322mhz_tdata;
+int   <64*NUM_CMAC_PORT> s_axis_adap_tx_322mhz_tkeep;
+int      <NUM_CMAC_PORT> s_axis_adap_tx_322mhz_tlast;
+int      <NUM_CMAC_PORT> s_axis_adap_tx_322mhz_tuser_err;
+
+int <512*NUM_CMAC_PORT> m_axis_adap_rx_322mhz_tdata;
+int  <64*NUM_CMAC_PORT> m_axis_adap_rx_322mhz_tkeep;
+int     <NUM_CMAC_PORT> m_axis_adap_rx_322mhz_tlast;
+int     <NUM_CMAC_PORT> m_axis_adap_rx_322mhz_tuser_err;
+
+int <512*NUM_CMAC_PORT> m_axis_cmac_tx_tdata;
+int  <64*NUM_CMAC_PORT> m_axis_cmac_tx_tkeep;
+int     <NUM_CMAC_PORT> m_axis_cmac_tx_tlast;
+int     <NUM_CMAC_PORT> m_axis_cmac_tx_tuser_err;
+
+int  <512*NUM_CMAC_PORT> s_axis_cmac_rx_tdata;
+int   <64*NUM_CMAC_PORT> s_axis_cmac_rx_tkeep;
+int      <NUM_CMAC_PORT> s_axis_cmac_rx_tlast;
+int      <NUM_CMAC_PORT> s_axis_cmac_rx_tuser_err;
+
+
+chp-txt{
+    forever{
+        select{
+            case #s_axis_adap_tx_322mhz_tdata_chan: (
+                recv(s_axis_adap_tx_322mhz_tdata_chan, s_axis_adap_tx_322mhz_tdata),
+                recv(s_axis_adap_tx_322mhz_tkeep_chan, s_axis_adap_tx_322mhz_tkeep),
+                recv(s_axis_adap_tx_322mhz_tlast_chan, s_axis_adap_tx_322mhz_tlast),
+                recv(s_axis_adap_tx_322mhz_tuser_err_chan, s_axis_adap_tx_322mhz_tuser_err);
+
+                // Insert custom logic here
+
+                send(m_axis_cmac_tx_tdata_chan, s_axis_adap_tx_322mhz_tdata),
+                send(m_axis_cmac_tx_tkeep_chan, s_axis_adap_tx_322mhz_tkeep),
+                send(m_axis_cmac_tx_tlast_chan, s_axis_adap_tx_322mhz_tlast),
+                send(m_axis_cmac_tx_tuser_err_chan, s_axis_adap_tx_322mhz_tuser_err)
+            );
+            else: skip
+        };
+        select{
+            case #s_axis_cmac_rx_tdata_chan: (
+                recv(s_axis_cmac_rx_tdata_chan, s_axis_cmac_rx_tdata),
+                recv(s_axis_cmac_rx_tkeep_chan, s_axis_cmac_rx_tkeep),
+                recv(s_axis_cmac_rx_tlast_chan, s_axis_cmac_rx_tlast),
+                recv(s_axis_cmac_rx_tuser_err_chan, s_axis_cmac_rx_tuser_err);
+
+                // Insert custom logic here
+
+                send(m_axis_adap_rx_322mhz_tdata_chan, s_axis_cmac_rx_tdata),
+                send(m_axis_adap_rx_322mhz_tkeep_chan, s_axis_cmac_rx_tkeep),
+                send(m_axis_adap_rx_322mhz_tlast_chan, s_axis_cmac_rx_tlast),
+                send(m_axis_adap_rx_322mhz_tuser_err_chan, s_axis_cmac_rx_tuser_err)
+            );
+            else: skip
+        }
+    }
+}
+
+
+}
